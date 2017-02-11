@@ -26,13 +26,13 @@ Commands
   - cls: clear console
 
 Bundled applications
-  -- type <filename>: display a text file content
-  -- mmlplay <xxx.org>: play mml data
-  -- tview <filename>: text viewer (see limitation)
-  -- invader: a game which doesn't look too far from the old invader game
-  -- bball: Show s a graphic demo
-  -- calc <equation>: calculates equation
-  -- there are some other small demo or debugging applications
+  - type <filename>: display a text file content
+  - mmlplay <xxx.org>: play mml data
+  - tview <filename>: text viewer (see limitation)
+  - invader: a game which doesn't look too far from the old invader game
+  - bball: Show s a graphic demo
+  - calc <equation>: calculates equation
+  - there are some other small demo or debugging applications
   
 Limitation:
   - As CSUD is used for mouse and keyboard, this software only supports keyboard and mouse that is supported by CSUD. So far, I found wired keyboards and mice have high chance of being recognized
