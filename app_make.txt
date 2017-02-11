@@ -1,0 +1,31 @@
+CC = arm-none-eabi-gcc -I../ -march=armv6zk -mtune=arm1176jzf-s -O0 -g -gdwarf-2 -c
+APILIBPATH = ../apilib/
+LD = arm-none-eabi-gcc
+
+all: ../bin/$(APP).out $(APP).asm
+
+../bin/$(APP).out: $(APP).o $(APILIBPATH)apilib.a Makefile ../applinker.ld
+	$(LD) -static -nostdlib  -lgcc -T ../applinker.ld $(APP).o /usr/lib/gcc/arm-none-eabi/4.9.3/libgcc.a $(APILIBPATH)apilib.a -o $(APP).out
+	cp $(APP).out ../bin/
+
+$(APP).asm: $(APP).out
+	arm-none-eabi-objdump -D $(APP).out > $(APP).asm
+
+%.o: %.c ../apilib.h Makefile ../appliker.ld
+	$(CC) $(CFLAG) $< -o $@
+
+.PHONY:clean
+clean:
+	rm -f *.o
+	rm -f *.elf
+	rm -f *.img
+	rm -f *.out
+	rm -f *.asm
+	rm -f *.map
+	rm -f *.obj
+	rm -f *.S~
+	rm -f *.c~
+	rm -f *.h~
+	rm -f *.asm~
+	rm -f *.ld~
+	rm -f *.txt~
