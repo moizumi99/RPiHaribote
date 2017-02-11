@@ -11,9 +11,9 @@ How to run:
   - Copy "xxx.out" files to the same  directory. Copy "xxx.org" files as well.
   - Insert the SDCARD to your Raspberry PI B+, connect USB keryboard and mouse (please see the limitation section). And boot.
   - Keys
-  -- Shift + F2 : create a new console
-  -- tab: Switch console
-  -- F11: Move up the window
+  * Shift + F2 : create a new console
+  * tab: Switch console
+  * F11: Move up the window
   - Commands
   -- mem: displays memory size and free size
   -- dir: shows root directory
