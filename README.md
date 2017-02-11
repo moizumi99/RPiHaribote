@@ -10,19 +10,22 @@ How to run:
   - Then, overwrite kernel.img in the new SDCARD with the one in /bin directory.
   - Copy "xxx.out" files to the same  directory. Copy "xxx.org" files as well.
   - Insert the SDCARD to your Raspberry PI B+, connect USB keryboard and mouse (please see the limitation section). And boot.
-  - Keys
-  * Shift + F2 : create a new console
-  * tab: Switch console
-  * F11: Move up the window
-  - Commands
-  -- mem: displays memory size and free size
-  -- dir: shows root directory
-  -- start: start an application. wait for completion
-  -- ncst: start an application, without waiting for completion
-  -- langmode [0/1/2]: change language mode (0=English, 1=Japanse SJIS, 2=Japanese EUC)
-  -- exit: exit console
-  -- cls: clear console
-  - bundled applications
+
+Keys
+  - Shift + F2 : create a new console
+  - tab: Switch console
+  - F11: Move up the window
+
+Commands
+  - mem: displays memory size and free size
+  - dir: shows root directory
+  - start: start an application. wait for completion
+  - ncst: start an application, without waiting for completion
+  - langmode [0/1/2]: change language mode (0=English, 1=Japanse SJIS, 2=Japanese EUC)
+  - exit: exit console
+  - cls: clear console
+
+Bundled applications
   -- type <filename>: display a text file content
   -- mmlplay <xxx.org>: play mml data
   -- tview <filename>: text viewer (see limitation)
