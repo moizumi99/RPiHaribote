@@ -2,49 +2,41 @@
 Raspberry Pi version of Haribote OS
 
 What's this:
-  This is Raspberry Pi porting of Haribote OS
+  This is Raspberry Pi porting of Haribote OS. This runs on Raspberry Pi B+ Rev 2.0.
+  The link to original Haribote OS support page is here: http://hrb.osask.jp/
 
-What is Haribote?:
-  Haribote is an OS for educational purpose released 
-by Hidemi Kawai in 2006 for educational purpose for x86. The uniqueness 
-of the OS was that it was released as a form of a book that explains the 
-every line of the codes.
-
-What can it do?
-  It is an educational purpose OS, so it does very little. Still it comes with the followin functions
-  - Provides basic GUI
-  - Support input from mouse and keyboard
-  - Provide basic console function with a few commands
-  - Read text file
-  - Run application in protected memory space
-  - Provides pre-emptive multi-tasking environment
-  - Displays Japanese test as well as English
-  - Plays music with buzzer function
-  - Provides some level of protection to OS
-  - Provides basic APIs for applications, such as file read, graphic drawing, keyboard input, etc.
-  - Comes with some applications such as text file viewer, MML player, an invader-like game, etc.
-
-Where can you get the original Haribote OS?:
-  You can download it from here
-  https://book.mynavi.jp/supportsite/detail/4839919844.html
-  The support web page is here
-  http://oswiki.osask.jp/
-
-What has been changed?
-  - Basically, all assembler codes are written from scratch to adapt to ARM architecture.
-  - Compiler tool-chain is moved to gcc, instead of Haribote's unique tool chain.
-  - All the peripheral access has been rebuilt from scratch. Mouse/keyboard support is 
-  realized by CSUD, which is take from https://github.com/Chadderz121/csud. Timer support 
-  is written from scratch. Graphic initialization is written from scratch. Beep sound is 
-  enabled using PWM at very low frequency.
-  - Instead of the segmentation used in the original Haribote, paging is used to realize 
-  - protection and multi-tasking
-  - Multi-tasking related codes are all re-built from scratch
-  - UART support and JTAG support is added
-  - Files are read from SDCARD instead of floppy disk
-  - FAT16 is supported instead of FAT12
-  - Bootloader is removed.
-
-Did you write everything?
-  I tried to preserve as much part as possible from the original Haribote OS. So, large part of the c-code is unmodified from the original. (Actually, preserving the code was tougher than re-writing in some cases.)
-  The USB device driver is take from another project https://github.com/Chadderz121/csud. SDCARD support is adapated from another project. Sound support has borrowed PWM access from https://github.com/Joeboy/pixperiments/tree/master/pitracker
+How to run:
+  - Copy your Raspberry Pi Raspbian OS boot directory to a new SD CARD. Only the FAT16 region that includes kernel.img need to be copied. Format needs to be FAT16.
+  - Then, overwrite kernel.img in the new SDCARD with the one in /bin directory.
+  - Copy "xxx.out" files to the same  directory. Copy "xxx.org" files as well.
+  - Insert the SDCARD to your Raspberry PI B+, connect USB keryboard and mouse (please see the limitation section). And boot.
+  - Keys
+  -- Shift + F2 : create a new console
+  -- tab: Switch console
+  -- F11: Move up the window
+  - Commands
+  -- mem: displays memory size and free size
+  -- dir: shows root directory
+  -- start: start an application. wait for completion
+  -- ncst: start an application, without waiting for completion
+  -- langmode [0/1/2]: change language mode (0=English, 1=Japanse SJIS, 2=Japanese EUC)
+  -- exit: exit console
+  -- cls: clear console
+  - bundled applications
+  -- type <filename>: display a text file content
+  -- mmlplay <xxx.org>: play mml data
+  -- tview <filename>: text viewer (see limitation)
+  -- invader: a game which doesn't look too far from the old invader game
+  -- bball: Show s a graphic demo
+  -- calc <equation>: calculates equation
+  -- there are some other small demo or debugging applications
+  
+Limitation:
+  - As CSUD is used for mouse and keyboard, this software only supports keyboard and mouse that is supported by CSUD. So far, I found wired keyboards and mice have high chance of being recognized
+  - SDCARD.c has a bug that may prevents the use of some SDCARD.c. I was informed about this issue, and am working on this.
+  - There's a bug that affects tview. You can not extend the tview window. I am working on this
+  - This version of Haribote has application compatibility with the original Haribote OS at c-code source level. The graphic viewer application that was bundled with the original Haribote is not included because of the assembler code.
+  - The extraction of compressed data in the original Haribote is not implemented.
+  - The support of ELF format used in the application is very rudimentary. Newly compiled application may not work. I am working on this.
+  - Only FAT16 is supported, and the support may not be complete. I am working on this
+  - Only tested with my Raspberry PI B+ rev2.0. It may not run on others. Future plan is to support Pi2, Pi zero, but no schedule defined.
