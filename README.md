@@ -31,15 +31,20 @@ Where can you get the original Haribote OS?:
   http://oswiki.osask.jp/
 
 What has been changed?
-  Basically, all assembler codes are written from scratch to adapt to ARM architecture.
-  Compiler tool-chain is moved to gcc, instead of Haribote's unique tool chain.
-  All the peripheral access has been rebuilt from scratch. Mouse/keyboard support is 
-  realized by CSUD (https://github.com/Chadderz121/csud). Timer support is Re-written. 
-  Graphic is written. Beep sound is enabled using PWM at very low frequency.
-  Instead of the segmentation used in the original Haribote, paging is used to realize 
-  protection and multi-tasking
-  Multi-tasking related codes are all re-built from scratch
-  UART support and JTAG support is added
-  Files are read from SDCARD instead of floppy disk
-  FAT16 is supported instead of FAT12
-  Bootloader is removed.
+  - Basically, all assembler codes are written from scratch to adapt to ARM architecture.
+  - Compiler tool-chain is moved to gcc, instead of Haribote's unique tool chain.
+  - All the peripheral access has been rebuilt from scratch. Mouse/keyboard support is 
+  realized by CSUD, which is take from https://github.com/Chadderz121/csud. Timer support 
+  is written from scratch. Graphic initialization is written from scratch. Beep sound is 
+  enabled using PWM at very low frequency.
+  - Instead of the segmentation used in the original Haribote, paging is used to realize 
+  - protection and multi-tasking
+  - Multi-tasking related codes are all re-built from scratch
+  - UART support and JTAG support is added
+  - Files are read from SDCARD instead of floppy disk
+  - FAT16 is supported instead of FAT12
+  - Bootloader is removed.
+
+Did you write everything?
+  I tried to preserve as much part as possible from the original Haribote OS. So, large part of the c-code is unmodified from the original. (Actually, preserving the code was tougher than re-writing in some cases.)
+  The USB device driver is take from another project https://github.com/Chadderz121/csud. SDCARD support is adapated from another project. Sound support has borrowed PWM access from https://github.com/Joeboy/pixperiments/tree/master/pitracker
