@@ -1,7 +1,5 @@
-Except CSUD, sound.c, sdcard.c which are adapted by other projects and 
-have their own license conditions, the software in this respository 
-follows the following licesnse term. The license term for CSUD and sound.c 
-are specified in each folder or file.
+Except sound.c, sdcard.c which have specific terms, the software in this 
+repository has the following license condition
 ==================================================================
 This is free and unencumbered software released into the public domain.
 
