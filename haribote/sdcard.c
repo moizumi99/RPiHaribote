@@ -1,5 +1,6 @@
 // Taken from here
 // https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=94133
+// Update: Control2 is removed according the the advice from LdB. Thanks a lot.
 //
 // Notes:
 // VOLTAGE_SWITCH: Haven't yet got this to work.  Command appears to work but dat0-3 go low and stay there.
@@ -30,6 +31,7 @@
 static void sdParseCID();
 static void sdParseCSD();
 static int sdSendCommand( int index );
+int fls_long (unsigned long x);
 
 // EMMC registers
 static volatile unsigned int* const EMMC_ARG2        = (unsigned int*)P2V_DEV(0x20300000);
@@ -822,43 +824,38 @@ static int sdReadSCR()
 /* Get the clock divider for the given requested frequency.
  * This is calculated relative to the SD base clock.
  */
-static int sdGetClockDivider( int freq )
-  {
-  // Work out the closest divider which will result in a frequency
-  // equal or less than that requested.
-  // Maximum possible divider is 1024.
-  int closest = 0;
-  if( freq > sdBaseClock ) closest = 1;
-  else
-    {
-    closest = sdBaseClock/freq;
-    if( sdBaseClock%freq ) closest++;
-    }
-  if( closest > 1024 ) closest = 1024;
-
-  // Now find the nearest valid divider value, again that will result in a
-  // frequency equal to or less than that requested.
-  // For V2, the divider is supposed to be a power of 2
-  // For V3, the divider is a multiple of 2, with a value of 0 indicating 1.
-  // TODO: currently only V2 algorithm appears to work.
-  int div = 1;
-  if( 0 && sdHostVer > HOST_SPEC_V2 )
-    div = closest;
-  else
-    for( div = 1; div < closest; div *= 2 );
-  div >>= 1;
-
-  // TODO: Don't allow divider > 15 - does not seem to work.
-  if( div > 15 ) div = 15;
-
-  //  printf("EMMC: Clock divider for freq %d is %d.\n",freq,div);
-
-  int hi = (div & 0x300) >> 2;
-  int lo = (div & 0x0ff);
-  int cdiv = (lo << 8) + hi;
-
-  return cdiv;
-  }
+ static int sdGetClockDivider( int freq )
+   {
+   // Work out the closest divider which will result in a frequency
+   // equal or less than that requested.
+   // Maximum possible divider is 1024.
+   int closest = 0;
+   if( freq > sdBaseClock ) closest = 1;
+   else
+     {
+     closest = sdBaseClock/freq;
+     if( sdBaseClock%freq ) closest++;
+     }
+   if( closest > 1024 ) closest = 1024;
+   // Now find the nearest valid divider value, again that will result in a
+   // frequency equal to or less than that requested.
+   // For V2, the divider is supposed to be a power of 2
+   // For V3, the divider is a multiple of 2, with a value of 0 indicating 1.
+   // TODO: currently only V2 algorithm appears to work.
+   int div = 1;
+   if( 0 && sdHostVer > HOST_SPEC_V2 )
+     div = closest;
+   else
+     for( div = 1; div < closest; div *= 2 );
+   div >>= 1;
+   // TODO: Don't allow divider > 15 - does not seem to work.
+   if( div > 15 ) div = 15;
+   //  printf("EMMC: Clock divider for freq %d is %d.\n",freq,div);
+   int hi = (div & 0x300) >> 2;
+   int lo = (div & 0x0ff);
+   int cdiv = (lo << 8) + hi;
+   return cdiv;
+   } 
 
 /* Set the SD clock to the given frequency.
  */
@@ -910,7 +907,7 @@ static int sdResetCard( int resetType )
 
   // Send reset host controller and wait for complete.
   *EMMC_CONTROL0 = 0; // C0_SPI_MODE_EN;
-  *EMMC_CONTROL2 = 0;
+  //  *EMMC_CONTROL2 = 0;
   *EMMC_CONTROL1 |= resetType;
   //*EMMC_CONTROL1 &= ~(C1_CLK_EN|C1_CLK_INTLEN);
   waitMicro(10);
@@ -996,42 +993,10 @@ static int sdAppSendOpCond( int arg )
 /* Switch voltage to 1.8v where the card supports it.
  */
 static int sdSwitchVoltage()
-  {
-  LOG_DEBUG("EMMC: Switching voltage.\n");
-
-  // Stop the card clock; switch the host control voltage to 1.8v
-  // TODO: Should we switch the host after the card or before?
-  // TODO: Undocumented CD_VDD_18 flag.
-  *EMMC_CONTROL1 &= ~C1_CLK_EN;
-  *EMMC_CONTROL2 |= C2_VDD_18;
-  waitCycle(150);
-  *EMMC_CONTROL1 |= C1_CLK_EN;
-  LOG_DEBUG("EMMC: After enabling clock, control2 = %08x\n",*EMMC_CONTROL2);
-
-  // If the voltage switch stuck, send the voltage switch command to the card.
-  if( *EMMC_CONTROL2 & C2_VDD_18 )
-    {
-    LOG_DEBUG("EMMC: Sending voltage switch command to the card.\n");
-    int resp;
-    if( (resp = sdSendCommand(IX_VOLTAGE_SWITCH)) ) return sdDebugResponse(resp);
-
-    LOG_DEBUG("EMMC: After voltage switch command, status = %08x.\n",*EMMC_STATUS);
-
-    // Check for hi level of DAT
-    int count = 1000;
-    while( !(*EMMC_STATUS & SR_DAT0) && count-- );
-    if( count <= 0 )
-      {
-      LOG_ERROR("EMMC: Gave up waiting for SR_DAT0 after voltage switch %08x\n",*EMMC_STATUS);
-      return SD_ERROR_VOLTAGE;
-      }
-
-    // Voltage switch requested and confirmed, means card supports UHS-I
-    sdCard.uhsi = 1;
-    }
-
+{
+  LOG_DEBUG("EMMC: Pi does not support switch voltage, fixed at 3.3volt\n");
   return SD_OK;
-  }
+}
 
 /* Transfer multiple contiguous blocks between the given address on the card and the buffer.
  */
@@ -1471,3 +1436,34 @@ static void sdParseCSD()
   // Get other attributes of the card.
   sdCard.fileFormat = sdCard.csd[3] & CSD3VN_FILE_FORMAT;
   }
+
+unsigned long roundup_pow_of_two (unsigned long x) {
+   return 1UL << fls_long(x - 1);
+}
+
+int fls_long (unsigned long x) {
+     int r = 32;
+     if (!x)  return 0;
+     if (!(x & 0xffff0000u)) {
+         x <<= 16;
+         r -= 16;
+     }
+     if (!(x & 0xff000000u)) {
+       x <<= 8;
+       r -= 8;
+    }
+    if (!(x & 0xf0000000u)) {
+      x <<= 4;
+      r -= 4;
+   }
+   if (!(x & 0xc0000000u)) {
+      x <<= 2;
+      r -= 2;
+   }
+   if (!(x & 0x80000000u)) {
+     x <<= 1;
+     r -= 1;
+   }
+   return r;
+ }
+
