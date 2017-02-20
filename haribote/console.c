@@ -385,18 +385,21 @@ int cmd_app(struct CONSOLE *cons, uint16_t *fat, char *cmdline)
 	if (finfo != 0) {
 		/* file found */
 		p = (char *) memman_alloc_4k(memman, finfo->size);
+		printf("Application start at 0x%08x, size: 0x%008x\n", p, finfo->size);
 		// application code and data are placed after APP_ADR
 		file_loadfile(finfo->clustno, finfo->size, p, fat, usradr);  // RPi
 		if (finfo->size >= 8 && *p==0x7F && strncmp(p+1, "ELF", 3)==0) {
-			stack_size = 1024*1024;
-			heap_size = 1024*1024;
+			stack_size = 1024*1024*2;
+			heap_size = 1024*1024*2;
 			q = (char *) memman_alloc_4k(memman, stack_size);
+			printf("Application stack at 0x%08x, size: 0x%008x\n", q, stack_size);
 			h = (char *) memman_alloc_4k(memman, heap_size);
-			setpages(task->section_table, (unsigned char *) APP_ADR             , p, finfo->size, 0b11);
-			setpages(task->section_table, (unsigned char *) (APP_ADR + 0x100000), q, stack_size,  0b11);
-			setpages(task->section_table, (unsigned char *) (APP_ADR + 0x200000), h, heap_size,   0b11);
+			printf("Application heap at 0x%08x, size: 0x%008x\n", h, heap_size);
+			setpages(task->section_table, (unsigned char *) APP_ADR              , p, finfo->size, 0b11);
+			setpages(task->section_table, (unsigned char *) (APP_ADR + 0x1000000), q, stack_size,  0b11);
+			setpages(task->section_table, (unsigned char *) (APP_ADR + 0x2000000), h, heap_size,   0b11);
 			invalidate_tlbs();
-			start_app(APP_ADR+0x8000, APP_ADR+0x100000 + stack_size);  // RPi
+			start_app(APP_ADR+0x8000, APP_ADR+0x1000000 + stack_size);  // RPi
 			shtctl = (struct SHTCTL *) _cons_shtctl;
 			for (i=0; i<MAX_SHEETS; i++) {
 				sht = &(shtctl->sheets0[i]);
@@ -412,9 +415,9 @@ int cmd_app(struct CONSOLE *cons, uint16_t *fat, char *cmdline)
 				}
 			}
 			timer_cancelall(&task->fifo);
-			setpages(task->section_table, (unsigned char *) APP_ADR           , (unsigned char *) APP_ADR           , finfo->size, 0b00);
-			setpages(task->section_table, (unsigned char *) (APP_ADR+0x100000), (unsigned char *) (APP_ADR+0x100000), stack_size,  0b00);
-			setpages(task->section_table, (unsigned char *) (APP_ADR+0x200000), (unsigned char *) (APP_ADR+0x200000), heap_size,   0b00);
+			setpages(task->section_table, (unsigned char *) APP_ADR            , (unsigned char *) APP_ADR           , finfo->size, 0b00);
+			setpages(task->section_table, (unsigned char *) (APP_ADR+0x1000000), (unsigned char *) (APP_ADR+0x1000000), stack_size,  0b00);
+			setpages(task->section_table, (unsigned char *) (APP_ADR+0x2000000), (unsigned char *) (APP_ADR+0x2000000), heap_size,   0b00);
 			invalidate_tlbs();
 			memman_free_4k(memman, (int) q, stack_size);
 			memman_free_4k(memman, (int) h, heap_size);
@@ -494,7 +497,7 @@ int hrb_api(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3, uint32_t r4, uin
 		sht->flags |= 0x10;
 		sheet_setbuf(sht, buf, r2, r3, r4);
 		make_window8(buf, r2, r3, title, 0);
-		sheet_slide(sht, ((shtctl->xsize - r2) / 2) & ~3, (shtctl->ysize - r3) / 2);
+		sheet_slide(sht, ((shtctl->xsize - ((int) r2))/2) & ~3, (shtctl->ysize - ((int) r3))/2);
 		sheet_updown(sht, shtctl->top); /* same level as the mouse */
 		result = (int) sht;
 	} else if (r0 == 6) {
