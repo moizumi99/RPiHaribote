@@ -500,7 +500,7 @@ static inline void wait(int32_t count)
 
 void waitCycle(int32_t count)
 {
-	wait(count/2);
+	wait(count);
 }
 
 int mbxGetClockRate(int id)
@@ -821,10 +821,65 @@ static int sdReadSCR()
   return SD_OK;
   }
 
+int fls_long (unsigned long x) {
+	int r = 32;
+	if (!x)  return 0;
+	if (!(x & 0xffff0000u)) {
+		x <<= 16;
+		r -= 16;
+	}
+	if (!(x & 0xff000000u)) {
+		x <<= 8;
+		r -= 8;
+    }
+    if (!(x & 0xf0000000u)) {
+		x <<= 4;
+		r -= 4;
+	}
+	if (!(x & 0xc0000000u)) {
+		x <<= 2;
+		r -= 2;
+	}
+	if (!(x & 0x80000000u)) {
+		x <<= 1;
+		r -= 1;
+	}
+	return r;
+}
+
+unsigned long roundup_pow_of_two (unsigned long x) {
+	return 1UL << fls_long(x - 1);
+}
+
 /* Get the clock divider for the given requested frequency.
  * This is calculated relative to the SD base clock.
  */
- static int sdGetClockDivider( int freq )
+static uint32_t sdGetClockDivider ( uint32_t freq ) {
+   uint32_t divisor;
+   uint32_t closest = 41666666 / freq;               // Pi SD frequency is always 41.66667Mhz on baremetal
+   uint32_t shiftcount = fls_long(closest - 1);      // Get the raw shiftcount
+   if (shiftcount > 0) shiftcount--;               // Note the offset of shift by 1 (look at the spec)
+   if (shiftcount > 7) shiftcount = 7;               // It's only 8 bits maximum on HOST_SPEC_V2
+   if (sdHostVer > HOST_SPEC_V2) divisor = closest;   // Version 3 take closest
+      else divisor = (1 << shiftcount);            // Version 2 take power 2
+   
+   if (divisor <= 2) {                           // Too dangerous to go for divisor 1 unless you test
+      divisor = 2;                           // You can't take divisor below 2 on slow cards
+      shiftcount = 0;                           // Match shift to above just for debug notification
+   }
+
+   LOG_DEBUG("Divisor selected = %u, pow 2 shift count = %u\n", divisor, shiftcount);
+   uint32_t hi = 0;
+   if (sdHostVer > HOST_SPEC_V2) hi = (divisor & 0x300) >> 2; // Only 10 bits on Hosts specs above 2
+    uint32_t lo = (divisor & 0x0ff);               // Low part always valid
+    uint32_t cdiv = (lo << 8) + hi;                  // Join and roll to position
+   return cdiv;                              // Return cdiv
+}
+
+/* Get the clock divider for the given requested frequency.
+ * This is calculated relative to the SD base clock.
+ */
+static int sdGetClockDivider_old( int freq )
    {
    // Work out the closest divider which will result in a frequency
    // equal or less than that requested.
@@ -1227,7 +1282,8 @@ int sdInitCard()
 
   // Check GPIO 47 status
   //  int cardAbsent = gpioGetPinLevel(GPIO_CD);
-  int cardAbsent = mmio_read(GPLEV1) & (1 << (47-32));
+  //  int cardAbsent = mmio_read(GPLEV1) & (1 << (47-32)); // TEST
+  int cardAbsent = 0;
   //  int cardEjected = gpioGetEventDetected(GPIO_CD);
   int cardEjected = mmio_read(GPEDS1) & (1 << (47-32));
   int oldCID[4];
@@ -1412,58 +1468,30 @@ static void sdParseCID()
 /* Parse CSD
  */
 static void sdParseCSD()
-  {
+{
   int csdVersion = sdCard.csd[0] & CSD0_VERSION;
 
   // For now just work out the size.
   if( csdVersion == CSD0_V1 )
-    {
-    int csize = ((sdCard.csd[1] & CSD1V1_C_SIZEH) << CSD1V1_C_SIZEH_SHIFT) +
+	  {
+		  int csize = ((sdCard.csd[1] & CSD1V1_C_SIZEH) << CSD1V1_C_SIZEH_SHIFT) +
                 ((sdCard.csd[2] & CSD2V1_C_SIZEL) >> CSD2V1_C_SIZEL_SHIFT);
-    int mult = 1 << (((sdCard.csd[2] & CSD2V1_C_SIZE_MULT) >> CSD2V1_C_SIZE_MULT_SHIFT) + 2);
-    long long blockSize = 1 << ((sdCard.csd[1] & CSD1VN_READ_BL_LEN) >> CSD1VN_READ_BL_LEN_SHIFT);
-    long long numBlocks = (csize+1LL)*mult;
-
-    sdCard.capacity = numBlocks * blockSize;
-    }
+		  int mult = 1 << (((sdCard.csd[2] & CSD2V1_C_SIZE_MULT) >> CSD2V1_C_SIZE_MULT_SHIFT) + 2);
+		  long long blockSize = 1 << ((sdCard.csd[1] & CSD1VN_READ_BL_LEN) >> CSD1VN_READ_BL_LEN_SHIFT);
+		  long long numBlocks = (csize+1LL)*mult;
+		  
+		  sdCard.capacity = numBlocks * blockSize;
+	  }
   else // if( csdVersion == CSD0_V2 )
-    {
-    long long csize = (sdCard.csd[2] & CSD2V2_C_SIZE) >> CSD2V2_C_SIZE_SHIFT;
-
-    sdCard.capacity = (csize+1LL)*512LL*1024LL;
-    }
-
+	  {
+		  long long csize = (sdCard.csd[2] & CSD2V2_C_SIZE) >> CSD2V2_C_SIZE_SHIFT;
+		  
+		  sdCard.capacity = (csize+1LL)*512LL*1024LL;
+	  }
+  
   // Get other attributes of the card.
   sdCard.fileFormat = sdCard.csd[3] & CSD3VN_FILE_FORMAT;
-  }
-
-unsigned long roundup_pow_of_two (unsigned long x) {
-   return 1UL << fls_long(x - 1);
 }
 
-int fls_long (unsigned long x) {
-     int r = 32;
-     if (!x)  return 0;
-     if (!(x & 0xffff0000u)) {
-         x <<= 16;
-         r -= 16;
-     }
-     if (!(x & 0xff000000u)) {
-       x <<= 8;
-       r -= 8;
-    }
-    if (!(x & 0xf0000000u)) {
-      x <<= 4;
-      r -= 4;
-   }
-   if (!(x & 0xc0000000u)) {
-      x <<= 2;
-      r -= 2;
-   }
-   if (!(x & 0x80000000u)) {
-     x <<= 1;
-     r -= 1;
-   }
-   return r;
- }
+
 

@@ -43,7 +43,7 @@ void HariMain(void)
 	struct TASK *task_a, *task_cons[2], *task;
 	int j, x, y, mmx = -1, mmy = -1, mmx2 = 0;
 	struct SHEET *sht = 0, *key_win, *sht2;
-	uint16_t *fat;
+	uint32_t *fat;
 	unsigned char *nihongo;
 	struct FILEINFO *finfo;
 	extern char hankaku[4096];
@@ -111,8 +111,8 @@ void HariMain(void)
 	
 	/* nihongo.fntの読み込み */
 	nihongo = (unsigned char *) memman_alloc_4k(memman, 16 * 256 + 32 * 94 * 47);
-	fat = (uint16_t *) memman_alloc_4k(memman, sectorsPerFAT*512);
-	file_readfat(fat, fatadr);
+	fat = (uint32_t *) memman_alloc_4k(memman, fat_bytesize);
+	file_readfat(memman, fat, fatadr);
 	finfo = file_search("nihongo.fnt", (struct FILEINFO *) rdedata, 512);
 	if (finfo != 0) {
 		file_loadfile(finfo->clustno, finfo->size, nihongo, fat, usradr);
@@ -125,7 +125,7 @@ void HariMain(void)
 		}
 	}
 	_task_a_nihongo = (int) nihongo;
-	memman_free_4k(memman, (int) fat, sectorsPerFAT*512);
+	memman_free_4k(memman, (int) fat, fat_bytesize);
 	
 	for(;;) {
 		io_cli();

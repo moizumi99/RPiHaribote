@@ -220,7 +220,7 @@ struct TASK {
 	struct CONSOLE *cons;
 	int cons_stack, cons_stack_svc;
 	struct FILEHANDLE *fhandle;
-	uint16_t *fat;
+	uint32_t *fat;
 	char *cmdline;
 	unsigned char langmode, langbyte1;
 	unsigned char *section_table, *page_table; // RPi
@@ -269,16 +269,16 @@ void cons_putchar(struct CONSOLE *cons, int chr, char move);
 void cons_newline(struct CONSOLE *cons);
 void cons_putstr0(struct CONSOLE *cons, char *s);
 void cons_putstr1(struct CONSOLE *cons, char *s, int l);
-void cons_runcmd(char *cmdline, struct CONSOLE *cons, uint16_t *fat, unsigned int memtotal);
+void cons_runcmd(char *cmdline, struct CONSOLE *cons, uint32_t *fat, unsigned int memtotal);
 void cmd_mem(struct CONSOLE *cons, unsigned int memtotal);
 void cmd_cls(struct CONSOLE *cons);
 void cmd_dir(struct CONSOLE *cons);
-void cmd_type(struct CONSOLE *cons, uint16_t *fat, char *cmdline);
-void cmd_exit(struct CONSOLE *cons, uint16_t *fat);
+void cmd_type(struct CONSOLE *cons, uint32_t *fat, char *cmdline);
+void cmd_exit(struct CONSOLE *cons, uint32_t *fat);
 void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal);
 void cmd_ncst(struct CONSOLE *cons, char *cmdline, int memtotal);
 void cmd_langmode(struct CONSOLE *cons, char *cmdline);
-int cmd_app(struct CONSOLE *cons, uint16_t *fat, char *cmdline);
+int cmd_app(struct CONSOLE *cons, uint32_t *fat, char *cmdline);
 int inthandler0d(uint32_t, uint32_t *, uint32_t);
 int inthandler0e(uint32_t, uint32_t *, uint32_t);
 int inthandler0f();
@@ -293,9 +293,11 @@ struct FILEINFO {
 	uint32_t size;
 };
 
-void file_readfat(uint16_t *fat, long long img);
-void file_loadfile(int clustno, int size, char *buf, uint16_t *fat, long long img);
+void file_readfat(struct MEMMAN *memman, uint32_t *fat, long long img);
+void file_loadfile(int clustno, int size, char *buf, uint32_t *fat, long long img);
 struct FILEINFO *file_search(char *name, struct FILEINFO *finfo, int max);
+uint32_t FAT_type;
+uint32_t fat_bytesize;
 
 /* bootpack.c */
 struct TASK *open_constask(struct SHEET *sht, unsigned int memtotal);

@@ -12,7 +12,10 @@ ISA = ARM6v2
 default:
 	make all
 
-all: kernel.img kernel.elf Makefile kernel.asm kernel.section.txt 
+all: kernel.img kernel.elf Makefile kernel.asm kernel.section.txt haribote.img
+
+haribote.img: kernel.img
+	cp kernel.img haribote.img
 
 kernel.img: kernel.elf Makefile
 	arm-none-eabi-objcopy kernel.elf -O binary kernel.img

@@ -17,7 +17,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
 	struct TASK *task = (struct TASK *)task_now(); // RPi
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	int i;
-	uint16_t *fat = (uint16_t *) memman_alloc_4k(memman, sectorsPerFAT*512); // RPi
+	uint32_t *fat;
 	struct CONSOLE cons;
 	struct FILEHANDLE fhandle[8];
 	char cmdline[30];
@@ -35,7 +35,8 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
 		timer_init(cons.timer, &task->fifo, 1);
 		timer_settime(cons.timer, 50);
 	}
-	file_readfat(fat, fatadr);
+	fat = (uint32_t *) memman_alloc_4k(memman, fat_bytesize); // RPi
+	file_readfat(memman, fat, fatadr);
 	for (i = 0; i < 8; i++) {
 		fhandle[i].buf = 0;	/* 未使用マーク */
 	}
@@ -212,7 +213,7 @@ void cons_putstr1(struct CONSOLE *cons, char *s, int l)
 }
 
 
-void cons_runcmd(char *cmdline, struct CONSOLE *cons, uint16_t *fat, unsigned int memtotal)
+void cons_runcmd(char *cmdline, struct CONSOLE *cons, uint32_t *fat, unsigned int memtotal)
 {
 	if (strcmp(cmdline, "mem") == 0 && cons->sht != 0) {
 		cmd_mem(cons, memtotal);
@@ -287,7 +288,7 @@ void cmd_dir(struct CONSOLE *cons)
 	return;
 }
 
-void cmd_exit(struct CONSOLE *cons, uint16_t *fat)
+void cmd_exit(struct CONSOLE *cons, uint32_t *fat)
 {
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	struct TASK *task = (struct TASK *) task_now();
@@ -296,7 +297,7 @@ void cmd_exit(struct CONSOLE *cons, uint16_t *fat)
 	if (cons->sht != 0) {
 		timer_cancel(cons->timer);
 	}
-	memman_free_4k(memman, (int) fat, sectorsPerFAT*512);
+	memman_free_4k(memman, (int) fat, fat_bytesize);
 	io_cli();
 	if (cons->sht != 0) {
 		fifo32_put(fifo, cons->sht - shtctl->sheets0 + 768);	/* 768〜1023 */
@@ -353,7 +354,7 @@ void cmd_langmode(struct CONSOLE *cons, char *cmdline)
 	return;
 }
 
-int cmd_app(struct CONSOLE *cons, uint16_t *fat, char *cmdline)
+int cmd_app(struct CONSOLE *cons, uint32_t *fat, char *cmdline)
 {
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	struct FILEINFO *finfo;
