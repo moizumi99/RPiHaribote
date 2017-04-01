@@ -4,7 +4,8 @@ Raspberry Pi version of Haribote OS
 What's this:
   This is Raspberry Pi porting of Haribote OS. This runs on Raspberry Pi B+ Rev 2.0.
   The link to original Haribote OS support page is here: http://hrb.osask.jp/
-
+  Details are in Wiki https://github.com/moizumi99/RPiHaribote/wiki
+  
 How to run:
   - Copy your Raspberry Pi Raspbian OS boot directory to a new SD CARD. Only the FAT16 region that includes kernel.img need to be copied. Format needs to be FAT16.
   - Then, overwrite kernel.img in the new SDCARD with the one in /bin directory.
